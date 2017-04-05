@@ -22,29 +22,21 @@ cv::Mat image;
 cv::Mat new_image;
 double contrast;
 int brightness;
+int frequency;
 
-// callback function for subscriber to topic img_pub
-void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
-  try
-  {
-    image = cv_bridge::toCvShare(msg, "bgr8")->image;
-    cv::waitKey(30);
-  }
-  catch (cv_bridge::Exception& e)
-  {
-    ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
-  }
-}
+// initalizing publisher to topic
+image_transport::Publisher pub;
+
 
 // callback function for dynamic reconfigure 
 void callback(imagepub::imgFilterConfig &config, uint32_t level) {
-  ROS_INFO("Reconfigure Filter Parameters, Contrast: %f, Brightness %d", config.double_param, config.int_param);
-  contrast = config.double_param;
-  brightness = config.int_param;
+  ROS_INFO("Reconfigure Filter Parameters, Contrast: %f, Brightness %d", config.Contrast, config.Brightness);
+  contrast = config.Contrast;
+  brightness = config.Brightness;
 }
 
 // image processing task new_image = contrast*image + brightness
-void adjustImage() {
+cv::Mat adjustImage(cv::Mat image) {
   new_image = cv::Mat::zeros( image.size(), image.type() );
   for( int y = 0; y < image.rows; y++ ) {
     for( int x = 0; x < image.cols; x++ ) { 
@@ -53,8 +45,33 @@ void adjustImage() {
       }
     }
   }
+  return new_image;
 }
 
+// callback function for subscriber to topic img_pub
+void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
+  try
+  {
+    image = cv_bridge::toCvCopy(msg, "bgr8")->image;
+
+    // enabling dynamic reconfiguration server
+    Server server;
+    Server::CallbackType f;
+  
+    f = boost::bind(&callback, _1, _2);
+    server.setCallback(f);
+
+    // perform contrast and brightness adjustment
+    new_image = adjustImage(image);
+    
+    sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", new_image).toImageMsg();
+    pub.publish(msg);
+  }
+  catch (cv_bridge::Exception& e)
+  {
+    ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
+  }
+}
 
 // main function
 int main(int argc, char **argv)
@@ -64,33 +81,16 @@ int main(int argc, char **argv)
   // creating node handle
   ros::NodeHandle nh;
 
+  nh.param<int>("img_publisher/frequency", frequency, 5);
+
   // defining topic subscriber using image transport
   image_transport::ImageTransport it(nh);
-  image_transport::Subscriber sub = it.subscribe("img_pub", 1, imageCallback);
-  
-  ros::spin();
+  image_transport::Subscriber sub = it.subscribe("img_pub", frequency, imageCallback);
 
-  // enabling dynamic reconfiguration server
-  Server server;
-  Server::CallbackType f;
-  
-  f = boost::bind(&callback, _1, _2);
-  server.setCallback(f);
-
-  // perform contrast and brightness adjustment
-  adjustImage();
-  
   // defining topic publisher using image_transport
-  image_transport::Publisher pub = it.advertise("img_filt", 1);
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", new_image).toImageMsg();
-  
-  ros::Rate loop_rate(5);
+  pub = it.advertise("img_filt", frequency);
 
-  while (nh.ok()) {
-    pub.publish(msg);
-    ros::spinOnce();
-    loop_rate.sleep();
-  }
+  ros::spin();
 
   return 0;
 }

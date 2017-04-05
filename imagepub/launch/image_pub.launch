@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <launch>
-  <node name="img_publisher" pkg="imagepub" type="img_publisher" respawn="true"  output="screen">
-    <param name="file" type="string" value="Harris.jpg" />
-    <param name="frequency" type="int" value="15" />
-  </node>
+  	<node name="img_publisher" pkg="imagepub" type="img_publisher" respawn="true" >
+    	<param name="file" type="string" value="/home/mayankm/SOFT_odom/src/imagepub/src/Harris.jpg" />
+    	<param name="frequency" type="int" value="15" />
+  	</node>
+  	<node name="img_filter" pkg="imagepub" type="img_filter" respawn="true"  output="screen">
+  	</node>
 </launch>
