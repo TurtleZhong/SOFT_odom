@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="img_publisher" pkg="imagepub" type="img_publisher" respawn="true"  output="screen">
+    <param name="file" type="string" value="Harris.jpg" />
+    <param name="frequency" type="int" value="15" />
+  </node>
+</launch>
