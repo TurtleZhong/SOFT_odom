@@ -1,3 +1,9 @@
+/** The node `img_filter` subscribes to the ros topic `img_pub` and reads the parameter from the parameter server, namely the frequency of publishing data to a topic. On the basis of the paramters read through dynamic reconfiguration in ROS, it adjusts the contrast and brighntess of the image. The final image is piblished on to a ros topic `img_filt` using cv_bridge and image_transport.
+*
+* PACKAGE: imagepub
+* Contributor: Mayank Mittal
+**/
+
 #include "ros/ros.h"
 #include <ros/console.h>
 #include <image_transport/image_transport.h>

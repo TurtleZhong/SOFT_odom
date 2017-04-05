@@ -1,3 +1,9 @@
+/** The node `img_publisher` reads the parameters from the parameter server, namely the frequency of publishing data to a topic and source location of an image file. It then publishes the image file to a ros topic `img_pub` using cv_bridge and image_transport in ROS.
+*
+* PACKAGE: imagepub
+* Contributor: Mayank Mittal
+**/
+
 #include "ros/ros.h"
 #include <ros/console.h>
 #include <image_transport/image_transport.h>
@@ -19,7 +25,7 @@ int main(int argc, char **argv)
 
   // defining topic publisher using image_transport
   image_transport::ImageTransport it(nh);
-  image_transport::Publisher pub = it.advertise("img_pub", 1);
+  image_transport::Publisher pub = it.advertise("img_pub", frequency);
 
   // fetching parameters for the node
   int frequency;

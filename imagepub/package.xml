@@ -2,7 +2,7 @@
 <package>
   <name>imagepub</name>
   <version>0.0.0</version>
-  <description>The Image Publisher Package</description>
+  <description>The Image Publisher Package (Image PipeLine)</description>
 
   <maintainer email="mayankm@iitk.ac.in">Mayank Mittal</maintainer>
 
