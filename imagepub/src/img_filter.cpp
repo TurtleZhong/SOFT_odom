@@ -22,7 +22,6 @@ cv::Mat image;
 cv::Mat new_image;
 double contrast;
 int brightness;
-int frequency;
 
 // initalizing publisher to topic
 image_transport::Publisher pub;
@@ -30,14 +29,14 @@ image_transport::Publisher pub;
 
 // callback function for dynamic reconfigure 
 void callback(imagepub::imgFilterConfig &config, uint32_t level) {
-  ROS_INFO("Reconfigure Filter Parameters, Contrast: %f, Brightness %d", config.Contrast, config.Brightness);
-  contrast = config.Contrast;
-  brightness = config.Brightness;
+  ROS_INFO("Reconfigure Filter Parameters, Contrast: %f, Brightness %d", config.contrast, config.brightness);
+  contrast = config.contrast;
+  brightness = config.brightness;
 }
 
 // image processing task new_image = contrast*image + brightness
 cv::Mat adjustImage(cv::Mat image) {
-  new_image = cv::Mat::zeros( image.size(), image.type() );
+  cv::Mat new_image = cv::Mat::zeros( image.size(), image.type() );
   for( int y = 0; y < image.rows; y++ ) {
     for( int x = 0; x < image.cols; x++ ) { 
       for( int c = 0; c < 3; c++ ) {
@@ -54,13 +53,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
   {
     image = cv_bridge::toCvCopy(msg, "bgr8")->image;
 
-    // enabling dynamic reconfiguration server
-    Server server;
-    Server::CallbackType f;
-  
-    f = boost::bind(&callback, _1, _2);
-    server.setCallback(f);
-
     // perform contrast and brightness adjustment
     new_image = adjustImage(image);
     
@@ -76,17 +68,25 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 // main function
 int main(int argc, char **argv)
 {
+
   ros::init(argc, argv, "image_publisher");
 
   // creating node handle
   ros::NodeHandle nh;
 
+  // get paramters from rosparam server
+  int frequency;
   nh.param<int>("img_publisher/frequency", frequency, 5);
+  
+  // enabling dynamic reconfiguration server
+  Server server;
+  Server::CallbackType f;
+  f = boost::bind(&callback, _1, _2);
+  server.setCallback(f);
 
-  // defining topic subscriber using image transport
   image_transport::ImageTransport it(nh);
+  // defining topic subscriber using image transport
   image_transport::Subscriber sub = it.subscribe("img_pub", frequency, imageCallback);
-
   // defining topic publisher using image_transport
   pub = it.advertise("img_filt", frequency);
 
