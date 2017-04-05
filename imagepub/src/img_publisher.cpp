@@ -9,6 +9,7 @@
 
 using namespace std;
 
+//main function
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "img_publisher"); 
@@ -16,10 +17,13 @@ int main(int argc, char **argv)
   // creating nodehandle
   ros::NodeHandle nh;
 
+  // defining topic publisher using image_transport
+  image_transport::ImageTransport it(nh);
+  image_transport::Publisher pub = it.advertise("img_pub", 1);
+
   // fetching parameters for the node
   int frequency;
   string file;
-
 
   nh.param<int>("img_publisher/frequency", frequency, 5);
 
@@ -29,10 +33,6 @@ int main(int argc, char **argv)
   else {
       nh.getParam("img_publisher/file", file);
   } 
-
-  //defining topic publisher using image_transport
-  image_transport::ImageTransport it(nh);
-  image_transport::Publisher pub = it.advertise("img_pub", 1);
 
   //read input from the argument passed to the file
   cv::Mat image = cv::imread(file, CV_LOAD_IMAGE_COLOR);

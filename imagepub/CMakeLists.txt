@@ -12,6 +12,14 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV)
 
+#################################
+## Add Dynamic Reconfigure API ##
+#################################
+generate_dynamic_reconfigure_options(
+  cfg/imgFilter.cfg
+)
+
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -20,6 +28,7 @@ catkin_package(
   LIBRARIES imagepub
   CATKIN_DEPENDS cv_bridge dynamic_reconfigure image_transport roscpp
 )
+
 
 ###########
 ## Build ##
@@ -37,8 +46,19 @@ add_dependencies(img_publisher
 	${catkin_EXPORTED_TARGETS} 
 	${${PROJECT_NAME}_EXPORTED_TARGETS}
 )
-
 target_link_libraries(img_publisher 
 	${catkin_LIBRARIES} 
 	${OpenCV_LIBRARIES}
+)
+
+## add the C++ img_filter 
+add_executable(img_filter src/img_filter.cpp)
+add_dependencies(img_filter
+  ${catkin_EXPORTED_TARGETS} 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${PROJECT_NAME}/cfg/imgFilter.cfg
+)
+target_link_libraries(img_filter 
+  ${catkin_LIBRARIES} 
+  ${OpenCV_LIBRARIES}
 )
