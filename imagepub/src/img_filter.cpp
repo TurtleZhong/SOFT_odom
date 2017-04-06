@@ -29,9 +29,9 @@ cv::Mat new_image;
 double contrast;
 int brightness;
 
-// initalizing publisher to topic
+// initalizing publisher and subscriber to topic
 image_transport::Publisher pub;
-
+image_transport::Subscriber sub;
 
 // callback function for dynamic reconfigure 
 void callback(imagepub::imgFilterConfig &config, uint32_t level) {
@@ -55,8 +55,7 @@ cv::Mat adjustImage(cv::Mat image) {
 
 // callback function for subscriber to topic img_pub
 void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
-  try
-  {
+  try {
     image = cv_bridge::toCvCopy(msg, "bgr8")->image;
 
     // perform contrast and brightness adjustment
@@ -65,16 +64,14 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", new_image).toImageMsg();
     pub.publish(msg);
   }
-  catch (cv_bridge::Exception& e)
-  {
+  catch (cv_bridge::Exception& e) {
     ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
   }
 }
 
 // main function
-int main(int argc, char **argv)
-{
-
+int main(int argc, char **argv) {
+  
   ros::init(argc, argv, "image_publisher");
 
   // creating node handle
@@ -92,7 +89,7 @@ int main(int argc, char **argv)
 
   image_transport::ImageTransport it(nh);
   // defining topic subscriber using image transport
-  image_transport::Subscriber sub = it.subscribe("img_pub", frequency, imageCallback);
+  sub = it.subscribe("img_pub", frequency, imageCallback);
   // defining topic publisher using image_transport
   pub = it.advertise("img_filt", frequency);
 
