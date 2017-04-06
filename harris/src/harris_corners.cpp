@@ -15,14 +15,21 @@
 #include <sstream>
 #include <stdio.h>
 
+// dynamic reconfigure header files
+#include <dynamic_reconfigure/server.h>
+#include <harris/harrisParamConfig.h>
+
 using namespace std;
+
+//typedef to ease out datatype name
+typedef dynamic_reconfigure::Server<harris::harrisParamConfig> Server;
 
 //topics name for the node
 string subName = "img_pub";
 string pubName = "harris_features";
 
 //frequency at which data to publish/subscrobe from topic
-int frequency = 5;
+int frequency = 15;
 
 // initalizing publisher and subscriber to topic
 image_transport::Publisher pub;
@@ -35,18 +42,21 @@ class harrisCornerDetector {
     double threshold;
 
   public:
-    void setHarrisParam(int , double);
+    void configCallback(harris::harrisParamConfig &, uint32_t);
     cv::Mat convertToGray(cv::Mat );
     cv::Mat findHarrisFeatures(cv::Mat );
     void publishMessage();
     void imageCallback(const sensor_msgs::ImageConstPtr &); 
 };
 
-void harrisCornerDetector::setHarrisParam(int t_size, double thresh){
-  template_size = t_size;
-  threshold = thresh;
+// callback function for dynamic reconfigure 
+void harrisCornerDetector::configCallback(harris::harrisParamConfig &config, uint32_t level) {
+  ROS_INFO("Reconfigure Harris Parameters, Template_Size: %d, Threshold %f", config.template_size, config.threshold);
+  template_size = config.template_size;
+  threshold = config.threshold;
 }
 
+//convert input image to grayscale
 cv::Mat harrisCornerDetector::convertToGray(cv::Mat image){
   if (image.cv::Mat::channels() != 1) {
     cv::Mat gray;
@@ -59,34 +69,36 @@ cv::Mat harrisCornerDetector::convertToGray(cv::Mat image){
   return image;
 }
 
+//find the Harris features in the input image using OpenCV library
 cv::Mat harrisCornerDetector::findHarrisFeatures(cv::Mat gray){
   //The input image must be grayscale
 
   cv::Mat dst, dst_norm, dst_norm_scaled;
   dst = cv::Mat::zeros( gray.size(), CV_32FC1 );
 
-  /// Detector parameters
-  int blockSize = 2;
+  // Detector parameters
+  int blockSize = template_size;
   int apertureSize = 3;
   double k = 0.04;  //Harris detector free parameter (typical value: 0.04)
 
-  /// Detecting corners
-  cv::cornerHarris( gray, dst, blockSize, apertureSize, k, BORDER_DEFAULT);
+  float strength = threshold*255;
 
-  /// Normalizing
+  // Detecting corners
+  cv::cornerHarris( gray, dst, blockSize, apertureSize, k, cv::BORDER_DEFAULT);
+
+  // Normalizing
   cv::normalize( dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat() );
   cv::convertScaleAbs( dst_norm, dst_norm_scaled );
 
   /// Drawing a circle around corners
-  for( int j = 0; j < dst_norm.rows ; j++ )
-     { for( int i = 0; i < dst_norm.cols; i++ )
-          {
-            if( (int) dst_norm.at<float>(j,i) > 150 )
-              {
-               cv::circle( dst_norm_scaled, cv::Point( i, j ), 5,  cv::Scalar(0), 2, 8, 0 );
-              } 
-          }
-     }
+  for( int j = 0; j < dst_norm.rows ; j++ ) {
+    for( int i = 0; i < dst_norm.cols; i++ ) {
+      if( (int) dst_norm.at<float>(j,i) > (int) strength ) {
+        cv::circle( dst_norm_scaled, cv::Point( i, j ), 5,  cv::Scalar(0), 2, 8, 0 );
+      }    
+    }
+  }
+
   return dst_norm_scaled;
 }
 
@@ -119,13 +131,19 @@ int main(int argc, char **argv) {
   // get paramters from rosparam server
   int template_size;
   double threshold;
-  nh.param<int>("harris_corners/template_size", template_size, 5);
-  nh.param<double>("harris_corners/threshold", threshold, 0.1);
+  //nh.param<int>("harris_corners/template_size", template_size, 5);
+  //nh.param<double>("harris_corners/threshold", threshold, 0.1);
 
   image_transport::ImageTransport it(nh);
 
   harrisCornerDetector H;
-  H.setHarrisParam(template_size, threshold);
+  //  H.setHarrisParam(template_size, threshold);
+
+  // enabling dynamic reconfiguration server
+  Server server;
+  Server::CallbackType f;
+  f = boost::bind(& harrisCornerDetector::configCallback, &H, _1, _2);
+  server.setCallback(f);
 
   // defining topic subscriber using image transport
   sub = it.subscribe(subName, frequency, &harrisCornerDetector::imageCallback, &H);

@@ -15,9 +15,9 @@ find_package(OpenCV)
 #################################
 ## Add Dynamic Reconfigure API ##
 #################################
-#generate_dynamic_reconfigure_options(
-#  cfg/harrisFeatures.cfg
-#)
+generate_dynamic_reconfigure_options(
+  cfg/harrisParam.cfg
+)
 
 
 ###################################

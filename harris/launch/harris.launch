@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <launch>
-  	<node name="harris_corners" pkg="harris" type="harris_corners" respawn="true" >
-    	<param name="template_size" type="int" value="5" />
-    	<param name="threshold" type="double" value="0.1" />
+  	<node name="img_publisher" pkg="imagepub" type="img_publisher" respawn="true" >
+    	<param name="file" type="string" value="/home/mayankm/SOFT_odom/src/imagepub/src/Harris.jpg" />
+    	<param name="frequency" type="int" value="15" />
+  	</node>
+  	<node name="harris_corners" pkg="harris" type="harris_corners" respawn="true" output="screen">
+    	<!--param name="template_size" type="int" value="5" /-->
+    	<!--param name="threshold" type="double" value="0.9" /-->
     </node>
 </launch>
