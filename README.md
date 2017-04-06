@@ -15,6 +15,6 @@ under the topic `img_pub`. It has the following parameters:
 
 ## Package `harris`
 
-* __harris_corners__: Class implementation of node that subscribes to an image topic `img_pub` and publish a resulting image topic `harris_features` showing the Harris corner points detected. It has the following dynamic reconfigure parameters:
+* __harris_corners__: Class implementation of node that subscribes to an image topic `img_pub` and publishes the resulting image on the topic `harris_features` showing the Harris corner points detected. It has the following dynamic reconfigure parameters:
 	* template size: an odd integer value greater than or equal to three that contains the size of the template for calculating the harris response at a given point
 	* threshold: a floating point value greather than zero that sets the lower boundary for a harris response value to be considered a corner. This value is in percent and taken relative to the maximum harris response in the input image
